@@ -77,12 +77,12 @@ class PfImage(object):
         #self.windows = []
 
         self.field_dict = {
-            "_rgb" : lambda : self._rgb ,
-            "_fft" : lambda : self._fft ,
-            "_fft_ps" : lambda : ip.gray2rgb(ip.fft2spect(self._fft)) ,
-            "_r" : lambda : ip.gray2rgb(self._rgb[:,:,0]) ,
-            "_g" : lambda : ip.gray2rgb(self._rgb[:,:,1]) ,
-            "_b" : lambda : ip.gray2rgb(self._rgb[:,:,2]) ,
+            "_rgb" : lambda x : x._rgb ,
+            "_fft" : lambda x : x._fft ,
+            "_fft_ps" : lambda x : ip.gray2rgb(ip.fft2spect(x._fft)) ,
+            "_r" : lambda x : ip.gray2rgb(x._rgb[:,:,0]) ,
+            "_g" : lambda x : ip.gray2rgb(x._rgb[:,:,1]) ,
+            "_b" : lambda x : ip.gray2rgb(x._rgb[:,:,2]) ,
         }
 
     def refresh(self,changed=None):
@@ -98,7 +98,7 @@ class PfImage(object):
 
     def get_field(self,name):
         if name in self.field_dict :
-            return self.field_dict[name]()
+            return self.field_dict[name](self)
 
     def view(self,shape,window_size,imgs):
         window = PfWindow(window_size,shape)
