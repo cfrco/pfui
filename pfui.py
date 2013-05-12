@@ -37,8 +37,9 @@ class PfRGB_Interface(object):
         self[:,:,1] = func(self[:,:,1],*args)
         self[:,:,2] = func(self[:,:,2],*args)
         self.autore(True)
-
+        print "do_end"
         self.ins.rebuild(self.name)
+        print "rebuild_end"
         self.ins.refresh()
 
 class PfBridge:
@@ -78,7 +79,7 @@ class PfImage(object):
 
         self.field_dict = {
             "_rgb" : lambda x : x._rgb ,
-            "_fft" : lambda x : x._fft ,
+            "_fft" : lambda x : np.real(x._fft),
             "_fft_ps" : lambda x : ip.gray2rgb(ip.fft2spect(x._fft)) ,
             "_r" : lambda x : ip.gray2rgb(x._rgb[:,:,0]) ,
             "_g" : lambda x : ip.gray2rgb(x._rgb[:,:,1]) ,
@@ -208,3 +209,18 @@ class PfWindow:
         self.imagev[ind[0]][ind[1]].set_from_pixbuf(
                         gtk.gdk.pixbuf_new_from_array(np.clip(im,0,255).astype(np.uint8),
                         gtk.gdk.COLORSPACE_RGB,8))
+
+
+def test_target():
+    import scipy.ndimage
+    print "load"
+    im = PfImage("test.jpg")
+    print "window"
+    im.view((2,3),(600,900),[["_rgb","_fft_ps","_fft"],["_r","_g","_b"]])
+    print "filter"
+    im.rgb.do(scipy.ndimage.gaussian_filter,4)
+    print "end"
+
+if __name__ == "__main__":
+    test_target()
+    #gtk.main()
