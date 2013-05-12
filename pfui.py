@@ -7,6 +7,30 @@ import scipy.misc
 
 import pyiptk as ip
 
+"""
+import Queue,threading
+class PfWorker:
+    @staticmethod
+    def worker(queue):
+        while True :
+            task = queue.get()
+            task[0](*task[1])
+
+    def __init__(self):
+        self.queue = Queue.Queue()
+        self.thread = threading.Thread(target=PfWorker.worker,args=[self.queue])
+        self.thread.daemon = True
+
+    def start(self):
+        return self.thread.start()
+
+    def add_task(self,task_func,task_arg=tuple()):
+        self.queue.put((task_func,task_arg))
+
+_taskworker = PfWorker()
+_taskworker.start()
+"""
+
 class PfRGB_Interface(object):
     def __init__(self,ins,name):
         self.ins = ins
@@ -37,22 +61,37 @@ class PfRGB_Interface(object):
         self[:,:,1] = func(self[:,:,1],*args)
         self[:,:,2] = func(self[:,:,2],*args)
         self.autore(True)
-
+        
+        print "do_end"
         self.ins.rebuild(self.name)
+        print "rebuild_end"
         self.ins.refresh()
 
+PfRender = {
+    "RGB" : lambda im,ins : im,
+    "R" : lambda im,ins : ip.gray2rgb(im[:,:,0]),
+    "G" : lambda im,ins : ip.gray2rgb(im[:,:,1]),
+    "B" : lambda im,ins : ip.gray2rgb(im[:,:,2]),
+    "FFTPS" : lambda im,ins : ip.gray2rgb(ip.four_spect(im)),
+    "FFT" : lambda im,ins : np.real(ip.rgb.fft2(im)),
+}
+
 class PfBridge:
-    def __init__(self,ins,name,viewer,index):
+    def __init__(self,ins,name,viewer,index,render):
         self.name = name
         self.ins = ins
         self.viewer = viewer
         self.index = index
+        self.render = render
 
         self.viewer.add_bridge(self)
         self.refresh()
 
     def refresh(self):
-        self.viewer.view(self.index,self.ins.get_field(self.name))
+        isize = self.viewer.get_imsize(self.ins._rgb.shape[:-1])
+        thumbnail = self.ins.get_thumbnail(isize)
+        self.viewer.view(self.index,self.render(thumbnail,self.ins))
+        #self.viewer.view(self.index,self.ins.get_field(self.name))
 
 class PfImage(object):
     def __init__(self,im):
@@ -74,11 +113,12 @@ class PfImage(object):
         self._fftif = PfRGB_Interface(self,"_fft")
 
         self.bridges = []
+        self.thumbnails = {}
         #self.windows = []
 
         self.field_dict = {
             "_rgb" : lambda x : x._rgb ,
-            "_fft" : lambda x : x._fft ,
+            "_fft" : lambda x : np.real(x._fft).astype(np.uint8) ,
             "_fft_ps" : lambda x : ip.gray2rgb(ip.fft2spect(x._fft)) ,
             "_r" : lambda x : ip.gray2rgb(x._rgb[:,:,0]) ,
             "_g" : lambda x : ip.gray2rgb(x._rgb[:,:,1]) ,
@@ -88,6 +128,7 @@ class PfImage(object):
     def refresh(self,changed=None):
         if changed == None :
             for bridge in self.bridges :
+                #_taskworker.add_task(bridge.refresh)
                 bridge.refresh()
 
     def rebuild(self,name):
@@ -96,17 +137,19 @@ class PfImage(object):
         elif name == "_fft":
             self._rgb = np.real(ip.rgb.ifft2(self._fft)).astype(np.uint8)
 
+        self.thumbnails = {} # clean thumbnail
+
     def get_field(self,name):
         if name in self.field_dict :
             return self.field_dict[name](self)
 
-    def view(self,shape,window_size,imgs):
+    def window(self,shape,window_size,imgs):
         window = PfWindow(window_size,shape)
         #self.windows += [window]
 
         for r in range(len(imgs)):
             for c in range(len(imgs[r])):
-                bridge = PfBridge(self,imgs[r][c],window,(r,c))
+                bridge = PfBridge(self,imgs[r][c],window,(r,c),PfRender[imgs[r][c]])
                 self.add_bridge(bridge)
 
         return window
@@ -116,6 +159,11 @@ class PfImage(object):
 
     def remove_bridge(self,bridge):
         self.bridges.remove(bridge)
+
+    def get_thumbnail(self,size):
+        if not size in self.thumbnails:
+            self.thumbnails[size] = scipy.misc.imresize(self._rgb,size,"nearest","RGB")
+        return self.thumbnails[size]
 
     @property
     def rgb(self):
@@ -202,9 +250,25 @@ class PfWindow:
         return tuple(osize)
 
     def view(self,ind,imarr):
-        isize = self.get_imsize((imarr.shape[0],imarr.shape[1]))
-        im = scipy.misc.imresize(imarr,isize,"nearest","RGB")
-        self.imagev[ind[0]][ind[1]].set_usize(isize[1],isize[0])
+        #isize = self.get_imsize((imarr.shape[0],imarr.shape[1]))
+        #im = scipy.misc.imresize(imarr,isize,"nearest","RGB")
+        #self.imagev[ind[0]][ind[1]].set_usize(isize[1],isize[0])
+        self.imagev[ind[0]][ind[1]].set_usize(imarr.shape[1],imarr.shape[0])
         self.imagev[ind[0]][ind[1]].set_from_pixbuf(
-                        gtk.gdk.pixbuf_new_from_array(np.clip(im,0,255).astype(np.uint8),
+                        gtk.gdk.pixbuf_new_from_array(imarr.astype(np.uint8),
                         gtk.gdk.COLORSPACE_RGB,8))
+
+
+def test_target():
+    import scipy.ndimage
+    print "load"
+    im = PfImage("test.jpg")
+    print "window"
+    im.window((2,3),(600,900),[["RGB","FFTPS","FFT"],["R","G","B"]])
+    print "filter"
+    im.rgb.do(scipy.ndimage.gaussian_filter,4)
+    print "end"
+
+if __name__ == "__main__":
+    test_target()
+    gtk.main()
