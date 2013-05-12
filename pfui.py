@@ -7,30 +7,6 @@ import scipy.misc
 
 import pyiptk as ip
 
-"""
-import Queue,threading
-class PfWorker:
-    @staticmethod
-    def worker(queue):
-        while True :
-            task = queue.get()
-            task[0](*task[1])
-
-    def __init__(self):
-        self.queue = Queue.Queue()
-        self.thread = threading.Thread(target=PfWorker.worker,args=[self.queue])
-        self.thread.daemon = True
-
-    def start(self):
-        return self.thread.start()
-
-    def add_task(self,task_func,task_arg=tuple()):
-        self.queue.put((task_func,task_arg))
-
-_taskworker = PfWorker()
-_taskworker.start()
-"""
-
 class PfRGB_Interface(object):
     def __init__(self,ins,name):
         self.ins = ins
@@ -62,9 +38,7 @@ class PfRGB_Interface(object):
         self[:,:,2] = func(self[:,:,2],*args)
         self.autore(True)
         
-        print "do_end"
         self.ins.rebuild(self.name)
-        print "rebuild_end"
         self.ins.refresh()
 
 PfRender = {
@@ -77,8 +51,7 @@ PfRender = {
 }
 
 class PfBridge:
-    def __init__(self,ins,name,viewer,index,render):
-        self.name = name
+    def __init__(self,ins,viewer,index,render):
         self.ins = ins
         self.viewer = viewer
         self.index = index
@@ -91,7 +64,6 @@ class PfBridge:
         isize = self.viewer.get_imsize(self.ins._rgb.shape[:-1])
         thumbnail = self.ins.get_thumbnail(isize)
         self.viewer.view(self.index,self.render(thumbnail,self.ins))
-        #self.viewer.view(self.index,self.ins.get_field(self.name))
 
 class PfImage(object):
     def __init__(self,im):
@@ -115,15 +87,6 @@ class PfImage(object):
         self.bridges = []
         self.thumbnails = {}
         #self.windows = []
-
-        self.field_dict = {
-            "_rgb" : lambda x : x._rgb ,
-            "_fft" : lambda x : np.real(x._fft).astype(np.uint8) ,
-            "_fft_ps" : lambda x : ip.gray2rgb(ip.fft2spect(x._fft)) ,
-            "_r" : lambda x : ip.gray2rgb(x._rgb[:,:,0]) ,
-            "_g" : lambda x : ip.gray2rgb(x._rgb[:,:,1]) ,
-            "_b" : lambda x : ip.gray2rgb(x._rgb[:,:,2]) ,
-        }
 
     def refresh(self,changed=None):
         if changed == None :
@@ -149,7 +112,10 @@ class PfImage(object):
 
         for r in range(len(imgs)):
             for c in range(len(imgs[r])):
-                bridge = PfBridge(self,imgs[r][c],window,(r,c),PfRender[imgs[r][c]])
+                if imgs[r][c].__class__ == "funciton":
+                    bridge = PfBridge(self,window,(r,c),imgs[r][c])
+                else :
+                    bridge = PfBridge(self,window,(r,c),PfRender[imgs[r][c]])
                 self.add_bridge(bridge)
 
         return window
@@ -173,18 +139,6 @@ class PfImage(object):
     def fft(self):
         return self._fftif
     
-    """
-    @rgb.setter
-    def rgb(self,val):
-        if isinstance(val,np.ndarray) :
-            if self._rgb.shape == val.shape :
-                self._rgb = val.copy()
-                self.refresh()
-        elif isinstance(val,PfRGB_Interface):
-            self.refresh()
-            self._rgb = val.ins._rgb.copy()
-    """
-
 class PfWindow:
     def destroy(self,widget,data=None):
         for bridge in self.bridges :
@@ -250,25 +204,8 @@ class PfWindow:
         return tuple(osize)
 
     def view(self,ind,imarr):
-        #isize = self.get_imsize((imarr.shape[0],imarr.shape[1]))
-        #im = scipy.misc.imresize(imarr,isize,"nearest","RGB")
-        #self.imagev[ind[0]][ind[1]].set_usize(isize[1],isize[0])
         self.imagev[ind[0]][ind[1]].set_usize(imarr.shape[1],imarr.shape[0])
         self.imagev[ind[0]][ind[1]].set_from_pixbuf(
                         gtk.gdk.pixbuf_new_from_array(imarr.astype(np.uint8),
                         gtk.gdk.COLORSPACE_RGB,8))
 
-
-def test_target():
-    import scipy.ndimage
-    print "load"
-    im = PfImage("test.jpg")
-    print "window"
-    im.window((2,3),(600,900),[["RGB","FFTPS","FFT"],["R","G","B"]])
-    print "filter"
-    im.rgb.do(scipy.ndimage.gaussian_filter,4)
-    print "end"
-
-if __name__ == "__main__":
-    test_target()
-    gtk.main()
