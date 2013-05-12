@@ -5,7 +5,7 @@ Usage
 -----
 <pre><code>import pfui
 im = pfui.PfImage("lena.png")
-im.view((2,1),(600,300),[["_rgb"],["_fft_ps"]])
+im.view((2,1),(600,300),[["RGB"],["FFTPS"]])
 
 rgb = im.rgb[:,:,:]
 im.rgb[:,:,0] = 0
