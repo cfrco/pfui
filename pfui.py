@@ -17,6 +17,9 @@ class PfRGB_Interface(object):
         return self.ins.__getattribute__(self.name).__getitem__(key)
 
     def __setitem__(self,key,value):
+        if self.autopush :
+            self.ins.push((self.name,self.duplicate()))
+        
         self.ins.__getattribute__(self.name).__setitem__(key,value)
 
         if self.rebuild :
@@ -27,12 +30,14 @@ class PfRGB_Interface(object):
     def autore(self,enable):
         self.refresh = enable
         self.rebuild = enable
+        self.autopush = enable
 
     def duplicate(self):
         return self[:,:,:].copy()
 
     def do(self,func,*args):
         self.autore(False)
+        self.ins.push((self.name,self.duplicate()))
         self[:,:,0] = func(self[:,:,0],*args)
         self[:,:,1] = func(self[:,:,1],*args)
         self[:,:,2] = func(self[:,:,2],*args)
@@ -86,6 +91,8 @@ class PfImage(object):
 
         self.bridges = []
         self.thumbnails = {}
+        self.stages = []
+        self.stages_limit = 5
         #self.windows = []
 
     def refresh(self,changed=None):
@@ -131,6 +138,30 @@ class PfImage(object):
             self.thumbnails[size] = scipy.misc.imresize(self._rgb,size,"nearest","RGB")
         return self.thumbnails[size]
 
+    def push(self,stage=None):
+        if len(self.stages) >= self.stages_limit:
+            self.stages.pop(0)
+
+        if stage:
+            self.stages.append(stage)
+        else :
+            self.stages.append(("_rgb",self._rgb.duplicate()))
+
+    def pop(self):
+        if len(self.stages) <= 0:
+            return 
+
+        stage = self.stages.pop()
+        print stage
+
+        if stage[0] == "_rgb":
+            self._rgb[:,:,:] = stage[1]
+        elif  stage[0] == "_fft":
+            self._fft[:,:,:] = stage[1]
+
+        self.rebuild(stage[0])
+        self.refresh()
+
     @property
     def rgb(self):
         return self._rgbif
@@ -138,7 +169,7 @@ class PfImage(object):
     @property
     def fft(self):
         return self._fftif
-    
+
 class PfWindow:
     def destroy(self,widget,data=None):
         for bridge in self.bridges :
