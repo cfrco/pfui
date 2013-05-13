@@ -18,7 +18,7 @@ class PfRGB_Interface(object):
 
     def __setitem__(self,key,value):
         if self.autopush :
-            self.ins.push((self.name,self.duplicate()))
+            self.ins.push()
         
         self.ins.__getattribute__(self.name).__setitem__(key,value)
 
@@ -37,7 +37,7 @@ class PfRGB_Interface(object):
 
     def do(self,func,*args):
         self.autore(False)
-        self.ins.push((self.name,self.duplicate()))
+        self.ins.push()
         self[:,:,0] = func(self[:,:,0],*args)
         self[:,:,1] = func(self[:,:,1],*args)
         self[:,:,2] = func(self[:,:,2],*args)
@@ -91,7 +91,10 @@ class PfImage(object):
 
         self.bridges = []
         self.thumbnails = {}
+
+        # stages
         self.stages = []
+        self.rstages = []
         self.stages_limit = 5
         #self.windows = []
 
@@ -141,26 +144,34 @@ class PfImage(object):
     def push(self,stage=None):
         if len(self.stages) >= self.stages_limit:
             self.stages.pop(0)
+        
+        # clean redo list
+        del self.rstages
+        self.rstages = []
 
         if stage:
             self.stages.append(stage)
         else :
-            self.stages.append(("_rgb",self._rgb.duplicate()))
+            self.stages.append(self.rgb.duplicate())
 
-    def pop(self):
-        if len(self.stages) <= 0:
-            return 
+    def pop(self,stack,astack):
+        if len(stack) <= 0:
+            return False
 
-        stage = self.stages.pop()
-        print stage
+        astack.append(self.rgb.duplicate())
 
-        if stage[0] == "_rgb":
-            self._rgb[:,:,:] = stage[1]
-        elif  stage[0] == "_fft":
-            self._fft[:,:,:] = stage[1]
+        stage = stack.pop()
+        self._rgb[:,:,:] = stage
 
-        self.rebuild(stage[0])
+        self.rebuild("_rgb")
         self.refresh()
+        return True
+
+    def undo(self):
+        return self.pop(self.stages,self.rstages)
+
+    def redo(self):
+        return self.pop(self.rstages,self.stages)
 
     @property
     def rgb(self):
@@ -247,4 +258,3 @@ class PfWindow:
         self.imagev[ind[0]][ind[1]].set_from_pixbuf(
                         gtk.gdk.pixbuf_new_from_array(imarr.astype(np.uint8),
                         gtk.gdk.COLORSPACE_RGB,8))
-
