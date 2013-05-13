@@ -106,8 +106,8 @@ class PfImage(object):
         if name in self.field_dict :
             return self.field_dict[name](self)
 
-    def window(self,shape,window_size,imgs):
-        window = PfWindow(window_size,shape)
+    def window(self,shape,window_size,imgs,name="Image"):
+        window = PfWindow(window_size,shape,name)
         #self.windows += [window]
 
         for r in range(len(imgs)):
@@ -151,6 +151,10 @@ class PfWindow:
     
     def delete_event(self,widget,event,data=None):
         return False
+    
+    def motion_notify(self,widget,event):
+        #event.x, event.y
+        pass
 
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
@@ -163,6 +167,10 @@ class PfWindow:
         self.window.set_border_width(0)
         self.window.connect("delete_event",self.delete_event)
         self.window.connect("destroy",self.destroy)
+
+        #window mouse-event
+        self.window.add_events(gtk.gdk.MOTION_NOTIFY|gtk.gdk.BUTTON_PRESS)
+        self.window.connect("motion_notify_event", self.motion_notify)
 
         #ImageViewer
         self.ibox = gtk.VBox()
