@@ -4,7 +4,7 @@ import scipy.misc
 
 import pyiptk as ip
 
-from pfwindow import PfWindow,PfBridge,PfRender
+from pfwindow import PfWindow,PfBridge,PfRender,window_templates
 
 class PfRGB_Interface(object):
     def __init__(self,ins,name):
@@ -129,6 +129,21 @@ class PfImage(object):
                 self.add_bridge(bridge)
 
         return window
+
+    def view(self,tname="basic",size=None,scale=1,name="Image"):
+        if isinstance(tname,str):
+            if not tname in window_templates:
+                return 
+            template = window_templates[tname]
+        elif isinstance(tname,tuple) and len(tname) == 2 :
+            template = tname
+
+        if size == None :
+            size = (self._rgb.shape[0]*scale,self._rgb.shape[1]*scale)
+
+        size = (int(size[0]*template[0][0]),int(size[1]*template[0][1]))
+
+        return self.window(template[0],size,template[1],name)
 
     def add_bridge(self,bridge):
         self.bridges += [bridge]

@@ -106,3 +106,11 @@ class PfWindow:
         self.imagev[ind[0]][ind[1]].set_from_pixbuf(
                         gtk.gdk.pixbuf_new_from_array(imarr.astype(np.uint8),
                         gtk.gdk.COLORSPACE_RGB,8))
+
+window_templates = {
+    "basic" : ((2,1),[["RGB"],["FFTPS"]]),
+    "im"    : ((1,1),[["RGB"]]),
+    "rgb_v" : ((3,1),[["R"],["G"],["B"]]),
+    "rgb_h" : ((1,3),[["R","G","B"]]),
+    "full"  : ((2,3),[["RGB","FFTPS","FFT"],["R","G","B"]]),
+}
