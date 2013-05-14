@@ -71,18 +71,39 @@ class PfBridge:
         self.viewer.view(self.index,self.render(thumbnail,self.ins))
 
 class PfImage(object):
-    def __init__(self,im):
-        if isinstance(im,str):
-            im = Image.open(im)
+    @staticmethod
+    def __create(indata):
+        #filename
+        if isinstance(indata,str):
+            indata = Image.open(indata)
+        
+        #Image
+        if isinstance(indata,Image.Image):
+            if indata.mode != "RGB":
+                indata = indata.convert("RGB")
+            rgb = np.asarray(indata).copy()
 
-        if isinstance(im,Image.Image):
-            if im.mode != "RGB":
-                im = im.convert("RGB")
-            rgb = np.asarray(im).copy()
-        elif isinstance(im,np.ndarray) and len(im) == 3 and im.shape[2] == 3:
-            rgb = im.copy()
+        #np.ndarray
+        elif isinstance(indata,np.ndarray) and len(indata.shape) == 3 and indata.shape[2] == 3:
+            rgb = indata.copy()
+
+        #PfImage
+        elif isinstance(indata,PfImage):
+            rgb = indata.rgb.duplicate()
+
+        #Tuple(row,col) , an empty image
+        elif isinstance(indata,tuple) and len(indata) == 2 and \
+             isinstance(indata[0],int) and isinstance(indata[1],int):
+            rgb = np.ndarray((indata[0],indata[1],3),dtype=np.uint8)
+            rgb[:,:,:] = 0
+
         else :
             raise Exception("Not supported type.")
+
+        return rgb
+
+    def __init__(self,im):
+        rgb = PfImage.__create(im)
         
         self._rgb = rgb
         self._fft = ip.rgb.fft2(rgb)
