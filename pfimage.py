@@ -4,7 +4,8 @@ import scipy.misc
 
 import pyiptk as ip
 
-from pfwindow import PfWindow,PfBridge,PfRender,window_templates
+#from pfwindow import PfWindow,PfBridge,PfRender,window_templates
+from pfwindow import *
 
 class PfRGB_Interface(object):
     def __init__(self,ins,name):
@@ -99,6 +100,14 @@ class PfImage(object):
         self.stages_limit = 5
         #self.windows = []
 
+    @property
+    def rgb(self):
+        return self._rgbif
+
+    @property
+    def fft(self):
+        return self._fftif
+
     def refresh(self,changed=None):
         if changed == None :
             for bridge in self.bridges :
@@ -115,7 +124,19 @@ class PfImage(object):
             self._fft = ip.rgb.fft2(self._rgb)
         elif name == "_fft":
             self._rgb = np.real(ip.rgb.ifft2(self._fft)).astype(np.uint8)
+    
+    def add_bridge(self,bridge):
+        self.bridges += [bridge]
 
+    def remove_bridge(self,bridge):
+        self.bridges.remove(bridge)
+
+    def get_thumbnail(self,size):
+        if not size in self.thumbnails:
+            self.thumbnails[size] = scipy.misc.imresize(self._rgb,size,"nearest","RGB")
+        return self.thumbnails[size]
+
+    #Window
     def window(self,shape,window_size,imgs,name="Image"):
         window = PfWindow(window_size,shape,name)
         #self.windows += [window]
@@ -144,18 +165,8 @@ class PfImage(object):
         size = (int(size[0]*template[0][0]),int(size[1]*template[0][1]))
 
         return self.window(template[0],size,template[1],name)
-
-    def add_bridge(self,bridge):
-        self.bridges += [bridge]
-
-    def remove_bridge(self,bridge):
-        self.bridges.remove(bridge)
-
-    def get_thumbnail(self,size):
-        if not size in self.thumbnails:
-            self.thumbnails[size] = scipy.misc.imresize(self._rgb,size,"nearest","RGB")
-        return self.thumbnails[size]
-
+    
+    #Stage
     def push(self,stage=None):
         if len(self.stages) >= self.stages_limit:
             self.stages.pop(0)
@@ -187,14 +198,8 @@ class PfImage(object):
 
     def redo(self):
         return self.pop(self.rstages,self.stages)
-
+    
+    #Misc
     def get_resize(self,size,mod="bilinear"):
         return scipy.misc.imresize(self._rgb,size,mod)
 
-    @property
-    def rgb(self):
-        return self._rgbif
-
-    @property
-    def fft(self):
-        return self._fftif

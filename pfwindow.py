@@ -43,8 +43,12 @@ class PfWindow:
         return False
     
     def motion_notify(self,widget,event):
-        #event.x, event.y
-        pass
+        size = self.window.get_size()
+        size = ((size[1]-self.statusbar.size_request()[1])/self.shape[0],
+                size[0]/self.shape[1])
+        x = int(event.x)%size[0]
+        y = int(event.y)%size[1]
+        self.statusbar.set_text("("+str(x)+","+str(y)+")")
 
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
@@ -77,6 +81,9 @@ class PfWindow:
                 hbox.pack_start(imagev,False,False,0)
                 self.imagev[r] += [imagev]
 
+        self.statusbar = gtk.Label()
+        self.ibox.pack_start(self.statusbar,False,False,0)
+
         self.window.show_all()
 
     def add_bridge(self,bridge):
@@ -87,7 +94,8 @@ class PfWindow:
 
     def get_imsize(self,imsize):
         size = self.window.get_size()
-        size = (size[1]/self.shape[0],size[0]/self.shape[1])
+        size = ((size[1]-self.statusbar.size_request()[1])/self.shape[0],
+                size[0]/self.shape[1])
         imr = float(imsize[0])/imsize[1]
         sr  = float(size[0])/size[1]
         osize = [0,0]
