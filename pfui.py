@@ -202,6 +202,9 @@ class PfImage(object):
     def redo(self):
         return self.pop(self.rstages,self.stages)
 
+    def get_resize(self,size,mod="bilinear"):
+        return scipy.misc.imresize(self._rgb,size,mod)
+
     @property
     def rgb(self):
         return self._rgbif
