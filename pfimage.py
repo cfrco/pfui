@@ -89,7 +89,7 @@ class PfImage(object):
             self._fft = ip.rgb.fft2(rgb)
             self._fftif = PfRGB_Interface(self,"_fft")
         else :
-            self._ffiif = None
+            self._fftif = None
 
         self.bridges = []
         self.thumbnails = {}

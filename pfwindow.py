@@ -20,6 +20,7 @@ class PfBridge:
         self.viewer = viewer
         self.index = index
         self.render = render
+        self.dview = None
 
         self.viewer.add_bridge(self)
         self.refresh()
@@ -28,6 +29,35 @@ class PfBridge:
         isize = self.viewer.get_imsize(self.ins._rgb.shape[:-1])
         thumbnail = self.ins.get_thumbnail(isize)
         self.viewer.view(self.index,self.render(thumbnail,self.ins))
+
+class PfdView:
+    def destroy(self,widget,data=None):
+        try :
+            gtk.main_quit()
+        except RuntimeError:
+            pass
+        
+        self.bridge.dview = None
+    
+    def delete_event(self,widget,event,data=None):
+        return False
+
+    def __init__(self,bridge):
+        self.bridge = bridge
+
+        self.window = gtk.Window()
+        self.window.set_title("DetailView")
+        self.window.set_border_width(0)
+        self.window.connect("delete_event",self.delete_event)
+        self.window.connect("destroy",self.destroy)
+
+        imagev = gtk.Image()
+        imagev.set_usize(bridge.ins._rgb.shape[1],bridge.ins._rgb.shape[0])
+        imarr = bridge.render(bridge.ins._rgb,bridge.ins).astype(np.uint8)
+        imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(imarr,gtk.gdk.COLORSPACE_RGB,8))
+        self.window.add(imagev)
+
+        self.window.show_all()
 
 class PfWindow:
     def destroy(self,widget,data=None):
@@ -50,6 +80,20 @@ class PfWindow:
         y = int(event.y)%size[1]
         self.statusbar.set_text("("+str(x)+","+str(y)+")")
 
+    def click(self,widget,event):
+        size = self.window.get_size()
+        size = ((size[1]-self.statusbar.size_request()[1])/self.shape[0],
+                size[0]/self.shape[1])
+        r = int(event.y)/size[0]
+        c = int(event.x)/size[1]
+        
+        if event.type == gtk.gdk._2BUTTON_PRESS :
+            for bridge in self.bridges :
+                if (r,c) == bridge.index and bridge.dview == None :
+                    bridge.dview = PfdView(bridge)
+                    
+        #print r,c
+
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
         self.shape = shape
@@ -63,8 +107,11 @@ class PfWindow:
         self.window.connect("destroy",self.destroy)
 
         #window mouse-event
-        self.window.add_events(gtk.gdk.MOTION_NOTIFY|gtk.gdk.BUTTON_PRESS)
+        self.window.add_events(gtk.gdk.MOTION_NOTIFY|
+                               gtk.gdk.BUTTON_PRESS|
+                               gtk.gdk.BUTTON_PRESS_MASK)
         self.window.connect("motion_notify_event", self.motion_notify)
+        self.window.connect("button_press_event",self.click)
 
         #ImageViewer
         self.ibox = gtk.VBox()
