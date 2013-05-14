@@ -102,13 +102,18 @@ class PfImage(object):
 
         return rgb
 
-    def __init__(self,im):
+    def __init__(self,im,fft=True):
         rgb = PfImage.__create(im)
         
         self._rgb = rgb
-        self._fft = ip.rgb.fft2(rgb)
         self._rgbif = PfRGB_Interface(self,"_rgb")
-        self._fftif = PfRGB_Interface(self,"_fft")
+        
+        self.fftsupport = fft
+        if fft :
+            self._fft = ip.rgb.fft2(rgb)
+            self._fftif = PfRGB_Interface(self,"_fft")
+        else :
+            self._ffiif = None
 
         self.bridges = []
         self.thumbnails = {}
@@ -126,12 +131,15 @@ class PfImage(object):
                 bridge.refresh()
 
     def rebuild(self,name):
+        self.thumbnails = {} # clean thumbnail
+
+        if not self.fftsupport :
+            return 
+
         if name == "_rgb":
             self._fft = ip.rgb.fft2(self._rgb)
         elif name == "_fft":
             self._rgb = np.real(ip.rgb.ifft2(self._fft)).astype(np.uint8)
-
-        self.thumbnails = {} # clean thumbnail
 
     def get_field(self,name):
         if name in self.field_dict :
