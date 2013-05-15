@@ -3,6 +3,9 @@ pygtk.require('2.0')
 import gtk
 import numpy as np
 
+def rgb2hex(rgb):
+    return "%02X%02X%02X" % (rgb[0],rgb[1],rgb[2])
+
 class PfBridge:
     def __init__(self,ins,viewer,index,render):
         self.ins = ins
@@ -32,11 +35,14 @@ class PfdView:
         return False
         
     def motion_notify(self,widget,event):
-        size = self.window.get_size()
-        size = ((size[1]-self.statusbar.size_request()[1]),size[0])
-        x = int(event.x)%size[0]
-        y = int(event.y)%size[1]
-        self.statusbar.set_text("("+str(x)+","+str(y)+")")
+        #size = self.window.get_size()
+        #size = ((size[1]-self.statusbar.size_request()[1]),size[0])
+        x = int(event.x)#%size[0]
+        y = int(event.y)#%size[1]
+        if x >= self.imarr.shape[1] or y >= self.imarr.shape[0]:
+            self.statusbar.set_text("")
+        else :
+            self.statusbar.set_text("("+str(x)+","+str(y)+") #"+rgb2hex(self.imarr[y,x,:]))
     
     def click(self,widget,event):
         if event.type == gtk.gdk._2BUTTON_PRESS :
@@ -63,8 +69,8 @@ class PfdView:
         #Image
         self.imagev = gtk.Image()
         self.imagev.set_usize(bridge.ins._rgb.shape[1],bridge.ins._rgb.shape[0])
-        imarr = bridge.render(bridge.ins._rgb,bridge.ins).astype(np.uint8)
-        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(imarr,gtk.gdk.COLORSPACE_RGB,8))
+        self.imarr = bridge.render(bridge.ins._rgb,bridge.ins).astype(np.uint8)
+        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(self.imarr,gtk.gdk.COLORSPACE_RGB,8))
         self.vbox.pack_start(self.imagev,False,False,0)
         
         #Statusbar
@@ -74,8 +80,8 @@ class PfdView:
         self.window.show_all()
 
     def refresh(self):
-        imarr = self.bridge.render(self.bridge.ins._rgb,self.bridge.ins).astype(np.uint8)
-        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(imarr,gtk.gdk.COLORSPACE_RGB,8))
+        self.imarr = self.bridge.render(self.bridge.ins._rgb,self.bridge.ins).astype(np.uint8)
+        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(self.imarr,gtk.gdk.COLORSPACE_RGB,8))
 
 class PfWindow:
     def destroy(self,widget,data=None):
