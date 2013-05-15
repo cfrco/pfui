@@ -47,6 +47,9 @@ class PfRGB_Interface(object):
         self.ins.rebuild(self.name)
         self.ins.refresh()
 
+    def save(self,filename,quality=100):
+        return Image.fromarray(self.ins.__getattribute__(self.name)).save(filename,quality=quality)
+
 class PfImage(object):
     @staticmethod
     def __create(indata):
