@@ -3,17 +3,6 @@ pygtk.require('2.0')
 import gtk
 import numpy as np
 
-import pyiptk as ip
-
-PfRender = {
-    "RGB" : lambda im,ins : im,
-    "R" : lambda im,ins : ip.gray2rgb(im[:,:,0]),
-    "G" : lambda im,ins : ip.gray2rgb(im[:,:,1]),
-    "B" : lambda im,ins : ip.gray2rgb(im[:,:,2]),
-    "FFTPS" : lambda im,ins : ip.gray2rgb(ip.four_spect(im)),
-    "FFT" : lambda im,ins : np.real(ip.rgb.fft2(im)),
-}
-
 class PfBridge:
     def __init__(self,ins,viewer,index,render):
         self.ins = ins

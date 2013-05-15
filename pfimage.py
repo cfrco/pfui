@@ -6,6 +6,7 @@ import pyiptk as ip
 
 #from pfwindow import PfWindow,PfBridge,PfRender,window_templates
 from pfwindow import *
+from pfrender import PfRender
 
 class PfRGB_Interface(object):
     def __init__(self,ins,name):
@@ -133,7 +134,7 @@ class PfImage(object):
 
     def get_thumbnail(self,size):
         if not size in self.thumbnails:
-            self.thumbnails[size] = scipy.misc.imresize(self._rgb,size,"nearest","RGB")
+            self.thumbnails[size] = scipy.misc.imresize(self._rgb,size,"bilinear","RGB")
         return self.thumbnails[size]
 
     #Window
