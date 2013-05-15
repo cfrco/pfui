@@ -101,6 +101,9 @@ class PfImage(object):
         self.stages_limit = 5
         #self.windows = []
 
+        #hooks
+        self.hooks = {"rebuild":[]}
+
     @property
     def rgb(self):
         return self._rgbif
@@ -112,7 +115,6 @@ class PfImage(object):
     def refresh(self,changed=None):
         if changed == None :
             for bridge in self.bridges :
-                #_taskworker.add_task(bridge.refresh)
                 bridge.refresh()
 
     def rebuild(self,name):
@@ -125,6 +127,8 @@ class PfImage(object):
             self._fft = ip.rgb.fft2(self._rgb)
         elif name == "_fft":
             self._rgb = np.real(ip.rgb.ifft2(self._fft)).astype(np.uint8)
+
+        self.do_hook("rebuild")
     
     def add_bridge(self,bridge):
         self.bridges += [bridge]
@@ -199,8 +203,17 @@ class PfImage(object):
 
     def redo(self):
         return self.pop(self.rstages,self.stages)
+
+    #Hook
+    def do_hook(self,event):
+        if event in self.hooks :
+            for hook in self.hooks[event]:
+                hook(self)
     
     #Misc
     def get_resize(self,size,mod="bilinear"):
         return scipy.misc.imresize(self._rgb,size,mod)
+
+    def put_rgb(self,pos,size,src):
+        self.rgb[pos[0]:pos[0]+size[0],pos[1]:pos[1]+size[1],:] = src
 

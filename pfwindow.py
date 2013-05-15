@@ -95,14 +95,7 @@ class PfWindow:
         return False
     
     def motion_notify(self,widget,event):
-        """
-        size = self.window.get_size()
-        size = ((size[1]-self.statusbar.size_request()[1])/self.shape[0],
-                size[0]/self.shape[1])
-        x = int(event.x)%size[0]
-        y = int(event.y)%size[1]
-        self.statusbar.set_text("("+str(x)+","+str(y)+")")
-        """
+        pass
 
     def click(self,widget,event):
         size = self.window.get_size()
@@ -111,13 +104,11 @@ class PfWindow:
         r = int(event.y)/size[0]
         c = int(event.x)/size[1]
         
-        if event.type == gtk.gdk._2BUTTON_PRESS :
+        if event.type == gtk.gdk._2BUTTON_PRESS and event.button == 1:
             for bridge in self.bridges :
                 if (r,c) == bridge.index and bridge.dview == None :
-                    bridge.dview = PfdView(bridge)
+                        bridge.dview = PfdView(bridge)
                     
-        #print r,c
-
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
         self.shape = shape
@@ -151,9 +142,6 @@ class PfWindow:
                 imagev.set_usize(window_size[1]/shape[1],window_size[0]/shape[0])
                 hbox.pack_start(imagev,False,False,0)
                 self.imagev[r] += [imagev]
-
-        #self.statusbar = gtk.Label()
-        #self.ibox.pack_start(self.statusbar,False,False,0)
 
         self.window.show_all()
 
