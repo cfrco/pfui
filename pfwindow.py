@@ -30,6 +30,17 @@ class PfdView:
     
     def delete_event(self,widget,event,data=None):
         return False
+        
+    def motion_notify(self,widget,event):
+        size = self.window.get_size()
+        size = ((size[1]-self.statusbar.size_request()[1]),size[0])
+        x = int(event.x)%size[0]
+        y = int(event.y)%size[1]
+        self.statusbar.set_text("("+str(x)+","+str(y)+")")
+    
+    def click(self,widget,event):
+        if event.type == gtk.gdk._2BUTTON_PRESS :
+            self.refresh()
 
     def __init__(self,bridge):
         self.bridge = bridge
@@ -39,14 +50,32 @@ class PfdView:
         self.window.set_border_width(0)
         self.window.connect("delete_event",self.delete_event)
         self.window.connect("destroy",self.destroy)
+        self.window.add_events(gtk.gdk.MOTION_NOTIFY|
+                               gtk.gdk.BUTTON_PRESS|
+                               gtk.gdk.BUTTON_PRESS_MASK)
+        self.window.connect("motion_notify_event", self.motion_notify)
+        self.window.connect("button_press_event",self.click)
+        
+        #VBox
+        self.vbox = gtk.VBox()
+        self.window.add(self.vbox)
 
-        imagev = gtk.Image()
-        imagev.set_usize(bridge.ins._rgb.shape[1],bridge.ins._rgb.shape[0])
+        #Image
+        self.imagev = gtk.Image()
+        self.imagev.set_usize(bridge.ins._rgb.shape[1],bridge.ins._rgb.shape[0])
         imarr = bridge.render(bridge.ins._rgb,bridge.ins).astype(np.uint8)
-        imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(imarr,gtk.gdk.COLORSPACE_RGB,8))
-        self.window.add(imagev)
-
+        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(imarr,gtk.gdk.COLORSPACE_RGB,8))
+        self.vbox.pack_start(self.imagev,False,False,0)
+        
+        #Statusbar
+        self.statusbar = gtk.Label()
+        self.vbox.pack_start(self.statusbar,False,False,0)
+        
         self.window.show_all()
+
+    def refresh(self):
+        imarr = self.bridge.render(self.bridge.ins._rgb,self.bridge.ins).astype(np.uint8)
+        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(imarr,gtk.gdk.COLORSPACE_RGB,8))
 
 class PfWindow:
     def destroy(self,widget,data=None):
@@ -62,16 +91,18 @@ class PfWindow:
         return False
     
     def motion_notify(self,widget,event):
+        """
         size = self.window.get_size()
         size = ((size[1]-self.statusbar.size_request()[1])/self.shape[0],
                 size[0]/self.shape[1])
         x = int(event.x)%size[0]
         y = int(event.y)%size[1]
         self.statusbar.set_text("("+str(x)+","+str(y)+")")
+        """
 
     def click(self,widget,event):
         size = self.window.get_size()
-        size = ((size[1]-self.statusbar.size_request()[1])/self.shape[0],
+        size = (size[1]/self.shape[0],
                 size[0]/self.shape[1])
         r = int(event.y)/size[0]
         c = int(event.x)/size[1]
@@ -117,8 +148,8 @@ class PfWindow:
                 hbox.pack_start(imagev,False,False,0)
                 self.imagev[r] += [imagev]
 
-        self.statusbar = gtk.Label()
-        self.ibox.pack_start(self.statusbar,False,False,0)
+        #self.statusbar = gtk.Label()
+        #self.ibox.pack_start(self.statusbar,False,False,0)
 
         self.window.show_all()
 
@@ -130,7 +161,7 @@ class PfWindow:
 
     def get_imsize(self,imsize):
         size = self.window.get_size()
-        size = ((size[1]-self.statusbar.size_request()[1])/self.shape[0],
+        size = (size[1]/self.shape[0],
                 size[0]/self.shape[1])
         imr = float(imsize[0])/imsize[1]
         sr  = float(size[0])/size[1]
