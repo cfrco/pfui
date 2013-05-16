@@ -38,9 +38,14 @@ class PfdView:
         x = int(event.x)
         y = int(event.y)
         if x >= self.imarr.shape[1] or y >= self.imarr.shape[0]:
-            self.statusbar.set_text("")
+            self.statusbar_text.set_text("")
         else :
-            self.statusbar.set_text("("+str(x)+","+str(y)+") #"+rgb2hex(self.imarr[y,x,:]))
+            self.statusbar_text.set_text("("+str(x)+","+str(y)+") #"+rgb2hex(self.imarr[y,x,:]))
+
+            self.nowcolor[:,:,:] = self.imarr[y,x,:] 
+            self.statusbar_color.set_from_pixbuf(
+                            gtk.gdk.pixbuf_new_from_array(self.nowcolor.astype(np.uint8),
+                            gtk.gdk.COLORSPACE_RGB,8))
     
     def click(self,widget,event):
         if event.type == gtk.gdk._2BUTTON_PRESS :
@@ -72,8 +77,15 @@ class PfdView:
         self.vbox.pack_start(self.imagev,False,False,0)
         
         #Statusbar
-        self.statusbar = gtk.Label()
-        self.vbox.pack_start(self.statusbar,False,False,0)
+        self.statusbar = gtk.HBox()
+        self.vbox.pack_start(self.statusbar,False,False,2)
+        
+        self.statusbar_text = gtk.Label()
+        self.statusbar_color = gtk.Image()
+        self.statusbar_color.set_usize(17,17)
+        self.nowcolor = np.ndarray((17,17,3),dtype=np.uint8)
+        self.statusbar.pack_start(self.statusbar_color,False,False,0)
+        self.statusbar.pack_start(self.statusbar_text,True,False,0)
         
         self.window.show_all()
 

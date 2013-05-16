@@ -159,7 +159,7 @@ class PfImage(object):
 
         return window
 
-    def view(self,tname="basic",size=None,scale=1,name="Image"):
+    def view(self,tname="basic",scale=1,size=None,name="Image"):
         if isinstance(tname,str):
             if not tname in window_templates:
                 return 
