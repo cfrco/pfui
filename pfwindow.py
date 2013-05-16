@@ -6,6 +6,12 @@ import numpy as np
 def rgb2hex(rgb):
     return "%02X%02X%02X" % (rgb[0],rgb[1],rgb[2])
 
+def ifkey(event,key,mask=gtk.gdk.MODIFIER_MASK):
+    if event.keyval == ord(key):
+        if event.get_state() & mask > 0:
+            return True
+    return False
+
 class PfBridge:
     def __init__(self,ins,viewer,index,render):
         self.ins = ins
@@ -120,6 +126,16 @@ class PfWindow:
             for bridge in self.bridges :
                 if (r,c) == bridge.index and bridge.dview == None :
                         bridge.dview = PfdView(bridge)
+
+    def keyrelease(self,widget,event):
+        """
+            if ifkey(event,'a') :
+                ...
+
+            if ifkey(event,'a',gtk.gdk.CONTROL_MASK):
+                ...
+        """
+        pass
                     
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
@@ -139,6 +155,7 @@ class PfWindow:
                                gtk.gdk.BUTTON_PRESS_MASK)
         self.window.connect("motion_notify_event", self.motion_notify)
         self.window.connect("button_press_event",self.click)
+        self.window.connect("key_release_event",self.keyrelease)
 
         #ImageViewer
         self.ibox = gtk.VBox()
