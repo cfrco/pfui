@@ -13,19 +13,29 @@ def ifkey(event,key,mask=gtk.gdk.MODIFIER_MASK):
     return False
 
 class PfInputBox:
+    def destroy(self,widget,data=None):
+        self.parent.iflag = False
+
     def delete_event(self,widget,event,data=None):
+        self.parent.iflag = False
         return False
 
     def keypress(self,widget,event):
-        if event.keyval == 65293 :
+        if event.keyval == 65293 : #Enter
             self.callback(self.textbox.get_text())
             self.window.destroy()
+        elif event.keyval == 65307 : #Esc
+            self.window.destroy()
 
-    def __init__(self,callback,message="InputBox"):
+    def __init__(self,parent,callback,message="InputBox"):
+        self.parent = parent
+        self.parent.iflag = True
+
         self.callback = callback
         self.window = gtk.Window()
         self.window.set_title(message)
         self.window.connect("delete_event",self.delete_event)
+        self.window.connect("destroy",self.destroy)
         self.window.connect("key_press_event",self.keypress)
         self.textbox = gtk.Entry()
         self.window.add(self.textbox)
@@ -84,8 +94,7 @@ class PfdView:
 
     def keyrelease(self,widget,event):
         if ifkey(event,'r') and not self.iflag :
-            self.iflag = True
-            inputbox = PfInputBox(self._set_title)
+            inputbox = PfInputBox(self,self._set_title)
 
     def __init__(self,bridge):
         self.bridge = bridge
@@ -166,8 +175,7 @@ class PfWindow:
 
     def keyrelease(self,widget,event):
         if ifkey(event,'r') and not self.iflag :
-            self.iflag = True
-            inputbox = PfInputBox(self._set_title)
+            inputbox = PfInputBox(self,self._set_title)
                     
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
