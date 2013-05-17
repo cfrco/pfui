@@ -12,6 +12,26 @@ def ifkey(event,key,mask=gtk.gdk.MODIFIER_MASK):
             return True
     return False
 
+class PfInputBox:
+    def delete_event(self,widget,event,data=None):
+        return False
+
+    def keypress(self,widget,event):
+        if event.keyval == 65293 :
+            self.callback(self.textbox.get_text())
+            self.window.destroy()
+
+    def __init__(self,callback,message="InputBox"):
+        self.callback = callback
+        self.window = gtk.Window()
+        self.window.set_title(message)
+        self.window.connect("delete_event",self.delete_event)
+        self.window.connect("key_press_event",self.keypress)
+        self.textbox = gtk.Entry()
+        self.window.add(self.textbox)
+
+        self.window.show_all()
+
 class PfBridge:
     def __init__(self,ins,viewer,index,render):
         self.ins = ins
@@ -56,9 +76,20 @@ class PfdView:
     def click(self,widget,event):
         if event.type == gtk.gdk._2BUTTON_PRESS :
             self.refresh()
+    
+    def _set_title(self,title):
+        self.window.set_title(title)
+        if self.iflag :
+            self.iflag = False
+
+    def keyrelease(self,widget,event):
+        if ifkey(event,'r') and not self.iflag :
+            self.iflag = True
+            inputbox = PfInputBox(self._set_title)
 
     def __init__(self,bridge):
         self.bridge = bridge
+        self.iflag = False
 
         self.window = gtk.Window()
         self.window.set_title("DetailView")
@@ -70,6 +101,7 @@ class PfdView:
                                gtk.gdk.BUTTON_PRESS_MASK)
         self.window.connect("motion_notify_event", self.motion_notify)
         self.window.connect("button_press_event",self.click)
+        self.window.connect("key_release_event",self.keyrelease)
         
         #VBox
         self.vbox = gtk.VBox()
@@ -127,19 +159,20 @@ class PfWindow:
                 if (r,c) == bridge.index and bridge.dview == None :
                         bridge.dview = PfdView(bridge)
 
-    def keyrelease(self,widget,event):
-        """
-            if ifkey(event,'a') :
-                ...
+    def _set_title(self,title):
+        self.window.set_title(title)
+        if self.iflag :
+            self.iflag = False
 
-            if ifkey(event,'a',gtk.gdk.CONTROL_MASK):
-                ...
-        """
-        pass
+    def keyrelease(self,widget,event):
+        if ifkey(event,'r') and not self.iflag :
+            self.iflag = True
+            inputbox = PfInputBox(self._set_title)
                     
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
         self.shape = shape
+        self.iflag = False
 
         #Window
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
