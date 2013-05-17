@@ -3,6 +3,8 @@ pygtk.require('2.0')
 import gtk
 import numpy as np
 
+import Image
+
 def rgb2hex(rgb):
     return "%02X%02X%02X" % (rgb[0],rgb[1],rgb[2])
 
@@ -92,9 +94,16 @@ class PfdView:
         if self.iflag :
             self.iflag = False
 
+    def _savefile(self,filename):
+        Image.fromarray(self.imarr).save(filename,quality=100)
+
     def keyrelease(self,widget,event):
         if ifkey(event,'r') and not self.iflag :
-            inputbox = PfInputBox(self,self._set_title)
+            PfInputBox(self,self._set_title)
+        elif ifkey(event,'s') and not self.iflag :
+            PfInputBox(self,self._savefile)
+        elif ifkey(event,'q',gtk.gdk.CONTROL_MASK):
+            self.window.destroy()
 
     def __init__(self,bridge):
         self.bridge = bridge
@@ -176,6 +185,8 @@ class PfWindow:
     def keyrelease(self,widget,event):
         if ifkey(event,'r') and not self.iflag :
             inputbox = PfInputBox(self,self._set_title)
+        elif ifkey(event,'q',gtk.gdk.CONTROL_MASK):
+            self.window.destroy()
                     
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
