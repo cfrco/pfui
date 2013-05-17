@@ -151,7 +151,7 @@ class PfImage(object):
 
         for r in range(len(imgs)):
             for c in range(len(imgs[r])):
-                if imgs[r][c].__class__ == "funciton":
+                if hasattr(imgs[r][c],"__call__"):
                     bridge = PfBridge(self,window,(r,c),imgs[r][c])
                 else :
                     bridge = PfBridge(self,window,(r,c),PfRender[imgs[r][c]])
@@ -207,16 +207,34 @@ class PfImage(object):
     def redo(self):
         return self.pop(self.rstages,self.stages)
 
+    def stage_clean(self):
+        self.stages = []
+        self.rstages = []
+
     #Hook
     def do_hook(self,event):
         if event in self.hooks :
             for hook in self.hooks[event]:
                 hook(self)
-    
+
+    def add_hook(self,event,hook,pos=None):
+        if pos == None :
+            self.hooks[event].append(hook)
+        else :
+            self.hooks[event].insert(pos,hook)
+
+        hook(self)
+
     #Misc
     def get_resize(self,size,mod="bilinear"):
         return scipy.misc.imresize(self._rgb,size,mod)
 
     def put_rgb(self,pos,size,src):
         self.rgb[pos[0]:pos[0]+size[0],pos[1]:pos[1]+size[1],:] = src
+
+    def origin(self,rgb=True,fft=False):
+        if rgb :
+            self._origin = self.rgb.duplicate()
+        if fft :
+            self._originfft = self.fft.duplicate()
 
