@@ -6,7 +6,12 @@ import pyiptk as ip
 
 #from pfwindow import PfWindow,PfBridge,PfRender,window_templates
 from pfwindow import *
-from pfrender import PfRender
+from pfrender import PfRender,qimg
+
+def rgb_do_wrap(func):
+    def _func(imarr,*args):
+        return qimg(func(imarr.astype(np.float),*args))
+    return _func
 
 class PfRGB_Interface(object):
     def __init__(self,ins,name):
