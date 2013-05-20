@@ -14,16 +14,6 @@ def ifkey(event,key,mask=gtk.gdk.MODIFIER_MASK):
             return True
     return False
 
-def zoom(imarr,scale=2):
-    s = int(scale)
-    out = np.ndarray((imarr.shape[0]*s,imarr.shape[1]*s,3),dtype=np.uint8)
-
-    for r in range(imarr.shape[0]):
-        for c in range(imarr.shape[1]):
-            out[r*s:r*s+s,c*s:c*s+s,:] = imarr[r,c,:]
-
-    return out
-
 class PfInputBox:
     def destroy(self,widget,data=None):
         self.parent.iflag = False
@@ -114,22 +104,9 @@ class PfdView:
             PfInputBox(self,self._savefile)
         elif ifkey(event,'q',gtk.gdk.CONTROL_MASK):
             self.window.destroy()
-        #Zoom
-        elif ifkey(event,'z') :
-            self.scale *= 2
-            r,c = self.imarr.shape[0]/2,self.imarr.shape[1]/2
-            rw,cw = self.imarr.shape[0]/self.scale/2,self.imarr.shape[1]/self.scale/2
-
-            if rw == 0 or cw == 0:
-                self.scale /= 2
-            else :
-                self.imarr = zoom(self.imarr[r-rw:r+rw,c-cw:c+cw,:],self.scale)
-                self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(
-                                            self.imarr,gtk.gdk.COLORSPACE_RGB,8))
 
     def __init__(self,bridge):
         self.bridge = bridge
-        self.scale = 1
         self.iflag = False
 
         self.window = gtk.Window()
