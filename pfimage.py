@@ -6,7 +6,12 @@ import pyiptk as ip
 
 #from pfwindow import PfWindow,PfBridge,PfRender,window_templates
 from pfwindow import *
-from pfrender import PfRender
+from pfrender import PfRender,qimg
+
+def rgb_do_wrap(func):
+    def _func(imarr,*args):
+        return qimg(func(imarr.astype(np.float),*args))
+    return _func
 
 class PfRGB_Interface(object):
     def __init__(self,ins,name):
@@ -46,6 +51,9 @@ class PfRGB_Interface(object):
         
         self.ins.rebuild(self.name)
         self.ins.refresh()
+
+    def save(self,filename,quality=100):
+        return Image.fromarray(self.ins.__getattribute__(self.name)).save(filename,quality=quality)
 
 class PfImage(object):
     @staticmethod
@@ -101,6 +109,9 @@ class PfImage(object):
         self.stages_limit = 5
         #self.windows = []
 
+        #hooks
+        self.hooks = {"rebuild":[]}
+
     @property
     def rgb(self):
         return self._rgbif
@@ -112,7 +123,6 @@ class PfImage(object):
     def refresh(self,changed=None):
         if changed == None :
             for bridge in self.bridges :
-                #_taskworker.add_task(bridge.refresh)
                 bridge.refresh()
 
     def rebuild(self,name):
@@ -125,6 +135,8 @@ class PfImage(object):
             self._fft = ip.rgb.fft2(self._rgb)
         elif name == "_fft":
             self._rgb = np.real(ip.rgb.ifft2(self._fft)).astype(np.uint8)
+
+        self.do_hook("rebuild")
     
     def add_bridge(self,bridge):
         self.bridges += [bridge]
@@ -144,7 +156,7 @@ class PfImage(object):
 
         for r in range(len(imgs)):
             for c in range(len(imgs[r])):
-                if imgs[r][c].__class__ == "funciton":
+                if hasattr(imgs[r][c],"__call__"):
                     bridge = PfBridge(self,window,(r,c),imgs[r][c])
                 else :
                     bridge = PfBridge(self,window,(r,c),PfRender[imgs[r][c]])
@@ -152,7 +164,7 @@ class PfImage(object):
 
         return window
 
-    def view(self,tname="basic",size=None,scale=1,name="Image"):
+    def view(self,tname="basic",scale=1,size=None,name="Image"):
         if isinstance(tname,str):
             if not tname in window_templates:
                 return 
@@ -199,8 +211,35 @@ class PfImage(object):
 
     def redo(self):
         return self.pop(self.rstages,self.stages)
-    
+
+    def stage_clean(self):
+        self.stages = []
+        self.rstages = []
+
+    #Hook
+    def do_hook(self,event):
+        if event in self.hooks :
+            for hook in self.hooks[event]:
+                hook(self)
+
+    def add_hook(self,event,hook,pos=None):
+        if pos == None :
+            self.hooks[event].append(hook)
+        else :
+            self.hooks[event].insert(pos,hook)
+
+        hook(self)
+
     #Misc
     def get_resize(self,size,mod="bilinear"):
         return scipy.misc.imresize(self._rgb,size,mod)
+
+    def put_rgb(self,pos,size,src):
+        self.rgb[pos[0]:pos[0]+size[0],pos[1]:pos[1]+size[1],:] = src
+
+    def origin(self,rgb=True,fft=False):
+        if rgb :
+            self._origin = self.rgb.duplicate()
+        if fft :
+            self._originfft = self.fft.duplicate()
 

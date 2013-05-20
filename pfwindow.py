@@ -3,8 +3,46 @@ pygtk.require('2.0')
 import gtk
 import numpy as np
 
+import Image
+
 def rgb2hex(rgb):
     return "%02X%02X%02X" % (rgb[0],rgb[1],rgb[2])
+
+def ifkey(event,key,mask=gtk.gdk.MODIFIER_MASK):
+    if event.keyval == ord(key):
+        if event.get_state() & mask > 0:
+            return True
+    return False
+
+class PfInputBox:
+    def destroy(self,widget,data=None):
+        self.parent.iflag = False
+
+    def delete_event(self,widget,event,data=None):
+        self.parent.iflag = False
+        return False
+
+    def keypress(self,widget,event):
+        if event.keyval == 65293 : #Enter
+            self.callback(self.textbox.get_text())
+            self.window.destroy()
+        elif event.keyval == 65307 : #Esc
+            self.window.destroy()
+
+    def __init__(self,parent,callback,message="InputBox"):
+        self.parent = parent
+        self.parent.iflag = True
+
+        self.callback = callback
+        self.window = gtk.Window()
+        self.window.set_title(message)
+        self.window.connect("delete_event",self.delete_event)
+        self.window.connect("destroy",self.destroy)
+        self.window.connect("key_press_event",self.keypress)
+        self.textbox = gtk.Entry()
+        self.window.add(self.textbox)
+
+        self.window.show_all()
 
 class PfBridge:
     def __init__(self,ins,viewer,index,render):
@@ -35,21 +73,41 @@ class PfdView:
         return False
         
     def motion_notify(self,widget,event):
-        #size = self.window.get_size()
-        #size = ((size[1]-self.statusbar.size_request()[1]),size[0])
-        x = int(event.x)#%size[0]
-        y = int(event.y)#%size[1]
+        x = int(event.x)
+        y = int(event.y)
         if x >= self.imarr.shape[1] or y >= self.imarr.shape[0]:
-            self.statusbar.set_text("")
+            self.statusbar_text.set_text("")
         else :
-            self.statusbar.set_text("("+str(x)+","+str(y)+") #"+rgb2hex(self.imarr[y,x,:]))
+            self.statusbar_text.set_text("("+str(x)+","+str(y)+") #"+rgb2hex(self.imarr[y,x,:]))
+
+            self.nowcolor[:,:,:] = self.imarr[y,x,:] 
+            self.statusbar_color.set_from_pixbuf(
+                            gtk.gdk.pixbuf_new_from_array(self.nowcolor.astype(np.uint8),
+                            gtk.gdk.COLORSPACE_RGB,8))
     
     def click(self,widget,event):
         if event.type == gtk.gdk._2BUTTON_PRESS :
             self.refresh()
+    
+    def _set_title(self,title):
+        self.window.set_title(title)
+        if self.iflag :
+            self.iflag = False
+
+    def _savefile(self,filename):
+        Image.fromarray(self.imarr).save(filename,quality=100)
+
+    def keyrelease(self,widget,event):
+        if ifkey(event,'r') and not self.iflag :
+            PfInputBox(self,self._set_title)
+        elif ifkey(event,'s') and not self.iflag :
+            PfInputBox(self,self._savefile)
+        elif ifkey(event,'q',gtk.gdk.CONTROL_MASK):
+            self.window.destroy()
 
     def __init__(self,bridge):
         self.bridge = bridge
+        self.iflag = False
 
         self.window = gtk.Window()
         self.window.set_title("DetailView")
@@ -61,6 +119,7 @@ class PfdView:
                                gtk.gdk.BUTTON_PRESS_MASK)
         self.window.connect("motion_notify_event", self.motion_notify)
         self.window.connect("button_press_event",self.click)
+        self.window.connect("key_release_event",self.keyrelease)
         
         #VBox
         self.vbox = gtk.VBox()
@@ -74,8 +133,15 @@ class PfdView:
         self.vbox.pack_start(self.imagev,False,False,0)
         
         #Statusbar
-        self.statusbar = gtk.Label()
-        self.vbox.pack_start(self.statusbar,False,False,0)
+        self.statusbar = gtk.HBox()
+        self.vbox.pack_start(self.statusbar,False,False,2)
+        
+        self.statusbar_text = gtk.Label()
+        self.statusbar_color = gtk.Image()
+        self.statusbar_color.set_usize(17,17)
+        self.nowcolor = np.ndarray((17,17,3),dtype=np.uint8)
+        self.statusbar.pack_start(self.statusbar_color,False,False,0)
+        self.statusbar.pack_start(self.statusbar_text,True,False,0)
         
         self.window.show_all()
 
@@ -97,14 +163,7 @@ class PfWindow:
         return False
     
     def motion_notify(self,widget,event):
-        """
-        size = self.window.get_size()
-        size = ((size[1]-self.statusbar.size_request()[1])/self.shape[0],
-                size[0]/self.shape[1])
-        x = int(event.x)%size[0]
-        y = int(event.y)%size[1]
-        self.statusbar.set_text("("+str(x)+","+str(y)+")")
-        """
+        pass
 
     def click(self,widget,event):
         size = self.window.get_size()
@@ -113,16 +172,26 @@ class PfWindow:
         r = int(event.y)/size[0]
         c = int(event.x)/size[1]
         
-        if event.type == gtk.gdk._2BUTTON_PRESS :
+        if event.type == gtk.gdk._2BUTTON_PRESS and event.button == 1:
             for bridge in self.bridges :
                 if (r,c) == bridge.index and bridge.dview == None :
-                    bridge.dview = PfdView(bridge)
-                    
-        #print r,c
+                        bridge.dview = PfdView(bridge)
 
+    def _set_title(self,title):
+        self.window.set_title(title)
+        if self.iflag :
+            self.iflag = False
+
+    def keyrelease(self,widget,event):
+        if ifkey(event,'r') and not self.iflag :
+            inputbox = PfInputBox(self,self._set_title)
+        elif ifkey(event,'q',gtk.gdk.CONTROL_MASK):
+            self.window.destroy()
+                    
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
         self.shape = shape
+        self.iflag = False
 
         #Window
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -138,6 +207,7 @@ class PfWindow:
                                gtk.gdk.BUTTON_PRESS_MASK)
         self.window.connect("motion_notify_event", self.motion_notify)
         self.window.connect("button_press_event",self.click)
+        self.window.connect("key_release_event",self.keyrelease)
 
         #ImageViewer
         self.ibox = gtk.VBox()
@@ -153,9 +223,6 @@ class PfWindow:
                 imagev.set_usize(window_size[1]/shape[1],window_size[0]/shape[0])
                 hbox.pack_start(imagev,False,False,0)
                 self.imagev[r] += [imagev]
-
-        #self.statusbar = gtk.Label()
-        #self.ibox.pack_start(self.statusbar,False,False,0)
 
         self.window.show_all()
 

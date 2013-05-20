@@ -2,6 +2,9 @@ import scipy.misc
 import pyiptk as ip
 import numpy as np
 
+def qimg(imarr):
+    return np.clip(imarr,0,255).astype(np.uint8)
+
 def qresize(im,out):
     if out.shape[0] == im.shape[0] and out.shape[1] == im.shape[1]:
         return out
