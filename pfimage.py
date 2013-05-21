@@ -104,6 +104,7 @@ class PfImage(object):
         self.thumbnails = {}
 
         # stages
+        self.stages_type = "rgb"
         self.stages = []
         self.rstages = []
         self.stages_limit = 5
@@ -191,18 +192,25 @@ class PfImage(object):
         if stage:
             self.stages.append(stage)
         else :
-            self.stages.append(self.rgb.duplicate())
+            if self.stages_type == "rgb":
+                self.stages.append(self.rgb.duplicate())
+            elif self.stages_type == "fft":
+                self.stages.append(self.fft.duplicate())
 
     def pop(self,stack,astack):
         if len(stack) <= 0:
             return False
-
-        astack.append(self.rgb.duplicate())
-
+        
         stage = stack.pop()
-        self._rgb[:,:,:] = stage
+        if self.stages_type == "rgb":
+            astack.append(self.rgb.duplicate())
+            self._rgb[:,:,:] = stage
+            self.rebuild("_rgb")
+        elif self.stages_type == "fft":
+            astack.append(self.fft.duplicate())
+            self._fft[:,:,:] = stage
+            self.rebuild("_fft")
 
-        self.rebuild("_rgb")
         self.refresh()
         return True
 
@@ -215,6 +223,14 @@ class PfImage(object):
     def stage_clean(self):
         self.stages = []
         self.rstages = []
+
+    def stage_type(self,stype=None):
+        if (stype == "rgb" and self.stages_type != "rgb") or \
+           (stype == "fft" and self.stages_type != "fft"):
+            self.stages_type = stype
+            self.stage_clean()
+
+        return self.stages_type
 
     #Hook
     def do_hook(self,event):
