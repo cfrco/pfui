@@ -165,6 +165,25 @@ class PfWindow:
     def motion_notify(self,widget,event):
         pass
 
+    def get_image(self):
+        size = self.window.get_size()
+        output = np.ndarray((size[1],size[0],3),dtype=np.uint8)
+        size = (size[1]/self.shape[0],
+                size[0]/self.shape[1])
+
+        for r in range(self.shape[0]):
+            for c in range(self.shape[1]):
+                pb = self.imagev[r][c].get_pixbuf()
+
+                if pb != None :
+                    output[r*size[0]:r*size[0]+size[0],
+                           c*size[1]:c*size[1]+size[1],:] = pb.get_pixels_array()
+
+        return output
+
+    def save_image(self,filename,quality=100):
+        return Image.fromarray(self.get_image()).save(filename,quality=quality)
+
     def click(self,widget,event):
         size = self.window.get_size()
         size = (size[1]/self.shape[0],
@@ -187,6 +206,8 @@ class PfWindow:
             inputbox = PfInputBox(self,self._set_title)
         elif ifkey(event,'q',gtk.gdk.CONTROL_MASK):
             self.window.destroy()
+        elif ifkey(event,'s'):
+            inputbox = PfInputBox(self,self.save_image)
                     
     def __init__(self,window_size,shape=(1,1),name="Image"):
         self.bridges = []
