@@ -63,10 +63,14 @@ class PfBridge:
         self.viewer.view(self.index,self.render(thumbnail,self.ins))
 
 class PfVar:
-    def __init__(self,name,vrange,vinc=(1,5)):
+    def __init__(self,name,vrange,val=0,vinc=(1,5)):
         self.name = name
         self.vrange = vrange
         self.vinc = vinc
+        self.val = val
+
+def qvar(name,mi,ma):
+    return PfVar(name,(mi,ma),val=mi)
 
 def test_change_func(view,args):
     out = view.imarr.copy()
@@ -76,6 +80,7 @@ def test_change_func(view,args):
     out[:,:,2] = scii.gaussian_filter(out[:,:,2],args[2])
 
     view.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(out,gtk.gdk.COLORSPACE_RGB,8))
+    view.nowimarr = out
 
 class PfsView:
     def delete_event(self,widget,event,data=None):
@@ -88,8 +93,12 @@ class PfsView:
         
         self.func(self,args)
 
+    def write_back(self):
+        self.im.rgb[:,:,:] = self.nowimarr
+
     def __init__(self,im,var,func=test_change_func):
         self.func = func
+        self.im = im
 
         self.window = gtk.Window()
         self.window.set_title("DynamicView")
@@ -106,25 +115,25 @@ class PfsView:
         self.imagev = gtk.Image()
         self.imagev.set_usize(im._rgb.shape[1],im._rgb.shape[0])
         self.imarr = im.rgb.duplicate()
+        self.outimarr = self.imarr
         self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(self.imarr,gtk.gdk.COLORSPACE_RGB,8))
         self.vbox.pack_start(self.imagev,False,False,0)
-
+        
+        #Scale
         self.hscales = []
-
         for v in var : 
             hbox = gtk.HBox()
             label = gtk.Label()
             label.set_text(v.name)
             hbox.pack_start(label,False,False,5)
-            label.show()
 
             hscale = gtk.HScale()
             hscale.set_range(*v.vrange)
             hscale.set_increments(*v.vinc)
             hscale.set_update_policy(gtk.UPDATE_DELAYED)
+            hscale.set_value(v.val)
             hscale.connect("value-changed",self.change)
             hbox.pack_start(hscale,True,True,10)
-            hscale.show()
             self.hscales += [hscale]
 
             self.vbox.pack_start(hbox)
