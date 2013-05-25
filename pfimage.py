@@ -51,6 +51,22 @@ class PfRGB_Interface(object):
         
         self.ins.rebuild(self.name)
         self.ins.refresh()
+    
+    def do_stream(self,*func_args):
+        self.autore(False)
+        self.ins.push()
+        
+        for funcargs in func_args:
+            func = funcargs[0]
+            args = funcargs[1:]
+            self[:,:,0] = func(self[:,:,0],*args)
+            self[:,:,1] = func(self[:,:,1],*args)
+            self[:,:,2] = func(self[:,:,2],*args)
+
+        self.autore(True)
+        
+        self.ins.rebuild(self.name)
+        self.ins.refresh()
 
     def save(self,filename,quality=100):
         return Image.fromarray(self.ins.__getattribute__(self.name)).\
