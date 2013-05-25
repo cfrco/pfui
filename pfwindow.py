@@ -96,6 +96,12 @@ class PfsView:
     def write_back(self):
         self.im.rgb[:,:,:] = self.nowimarr
 
+    def keyrelease(self,widget,event):
+        if ifkey(event,'q',gtk.gdk.CONTROL_MASK):
+            self.window.destroy()
+        elif ifkey(event,'w',gtk.gdk.CONTROL_MASK):
+            self.write_back()
+
     def __init__(self,im,var,func=test_change_func):
         self.func = func
         self.im = im
@@ -107,6 +113,7 @@ class PfsView:
         self.window.add_events(gtk.gdk.MOTION_NOTIFY|
                                gtk.gdk.BUTTON_PRESS|
                                gtk.gdk.BUTTON_PRESS_MASK)
+        self.window.connect("key_release_event",self.keyrelease)
 
         self.vbox = gtk.VBox()
         self.window.add(self.vbox)
