@@ -15,6 +15,9 @@ def ifkey(event,key,mask=gtk.gdk.MODIFIER_MASK):
         if event.get_state() & mask > 0:
             return True
     return False
+        
+def arr2pixbuf(imarr):
+    return gtk.gdk.pixbuf_new_from_array(imarr,gtk.gdk.COLORSPACE_RGB,8)
 
 class PfInputBox:
     def destroy(self,widget,data=None):
@@ -79,7 +82,7 @@ def test_change_func(view,args):
     out[:,:,1] = scii.gaussian_filter(out[:,:,1],args[1])
     out[:,:,2] = scii.gaussian_filter(out[:,:,2],args[2])
 
-    view.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(out,gtk.gdk.COLORSPACE_RGB,8))
+    view.imagev.set_from_pixbuf(arr2pixbuf(out))
     view.nowimarr = out
 
 class PfsView:
@@ -123,7 +126,7 @@ class PfsView:
         self.imagev.set_usize(im._rgb.shape[1],im._rgb.shape[0])
         self.imarr = im.rgb.duplicate()
         self.outimarr = self.imarr
-        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(self.imarr,gtk.gdk.COLORSPACE_RGB,8))
+        self.imagev.set_from_pixbuf(arr2pixbuf(self.imarr))
         self.vbox.pack_start(self.imagev,False,False,0)
         
         #Scale
@@ -168,9 +171,7 @@ class PfdView:
             self.statusbar_text.set_text("("+str(x)+","+str(y)+") #"+rgb2hex(self.imarr[y,x,:]))
 
             self.nowcolor[:,:,:] = self.imarr[y,x,:] 
-            self.statusbar_color.set_from_pixbuf(
-                            gtk.gdk.pixbuf_new_from_array(self.nowcolor.astype(np.uint8),
-                            gtk.gdk.COLORSPACE_RGB,8))
+            self.statusbar_color.set_from_pixbuf(arr2pixbuf(self.nowcolor.astype(np.uint8)))
     
     def click(self,widget,event):
         if event.type == gtk.gdk._2BUTTON_PRESS :
@@ -216,7 +217,7 @@ class PfdView:
         self.imagev = gtk.Image()
         self.imagev.set_usize(bridge.ins._rgb.shape[1],bridge.ins._rgb.shape[0])
         self.imarr = bridge.render(bridge.ins._rgb,bridge.ins).astype(np.uint8)
-        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(self.imarr,gtk.gdk.COLORSPACE_RGB,8))
+        self.imagev.set_from_pixbuf(arr2pixbuf(self.imarr))
         self.vbox.pack_start(self.imagev,False,False,0)
         
         #Statusbar
@@ -234,7 +235,7 @@ class PfdView:
 
     def refresh(self):
         self.imarr = self.bridge.render(self.bridge.ins._rgb,self.bridge.ins).astype(np.uint8)
-        self.imagev.set_from_pixbuf(gtk.gdk.pixbuf_new_from_array(self.imarr,gtk.gdk.COLORSPACE_RGB,8))
+        self.imagev.set_from_pixbuf(arr2pixbuf(self.imarr))
 
 class PfWindow:
     def destroy(self,widget,data=None):
@@ -359,9 +360,7 @@ class PfWindow:
 
     def view(self,ind,imarr):
         self.imagev[ind[0]][ind[1]].set_usize(imarr.shape[1],imarr.shape[0])
-        self.imagev[ind[0]][ind[1]].set_from_pixbuf(
-                        gtk.gdk.pixbuf_new_from_array(imarr.astype(np.uint8),
-                        gtk.gdk.COLORSPACE_RGB,8))
+        self.imagev[ind[0]][ind[1]].set_from_pixbuf(arr2pixbuf(imarr.astype(np.uint8)))
 
 window_templates = {
     "basic" : ((2,1),[["RGB"],["FFTPS"]]),
