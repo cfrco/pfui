@@ -48,6 +48,7 @@ class PfInputBox:
         self.window.add(self.textbox)
 
         self.window.show_all()
+        self.window.set_usize(250,self.window.get_size()[1])
 
 class PfBridge:
     def __init__(self,ins,viewer,index,render):
