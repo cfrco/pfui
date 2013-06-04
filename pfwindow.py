@@ -255,15 +255,20 @@ class PfWindow:
         pass
 
     def get_image(self):
+        """
+            TODO[bug]@cfrco:
+            may output wrong image
+        """
         size = self.window.get_size()
         output = np.ndarray((size[1],size[0],3),dtype=np.uint8)
+        output[:,:,:] = 0
         size = (size[1]/self.shape[0],
                 size[0]/self.shape[1])
 
         for r in range(self.shape[0]):
             for c in range(self.shape[1]):
                 pb = self.imagev[r][c].get_pixbuf()
-
+                
                 if pb != None :
                     output[r*size[0]:r*size[0]+size[0],
                            c*size[1]:c*size[1]+size[1],:] = pb.get_pixels_array()
