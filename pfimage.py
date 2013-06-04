@@ -147,6 +147,7 @@ class PfImage(object):
         self.thumbnails = {} # clean thumbnail
 
         if not self.fftsupport :
+            self.do_hook("rebuild")
             return 
 
         if name == "_rgb":
