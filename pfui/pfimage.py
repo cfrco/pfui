@@ -2,7 +2,6 @@ import Image
 import numpy as np
 import scipy.misc
 
-#import pyiptk as ip
 from .pyiptk import rgb as iprgb
 
 from .pfwindow import *

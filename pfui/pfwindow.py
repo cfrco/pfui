@@ -268,10 +268,11 @@ class PfWindow:
         for r in range(self.shape[0]):
             for c in range(self.shape[1]):
                 pb = self.imagev[r][c].get_pixbuf()
+                pa = pb.get_pixels_array()
                 
                 if pb != None :
-                    output[r*size[0]:r*size[0]+size[0],
-                           c*size[1]:c*size[1]+size[1],:] = pb.get_pixels_array()
+                    output[r*size[0]:r*size[0]+len(pa),
+                           c*size[1]:c*size[1]+len(pa[0]),:] = pa
 
         return output
 
