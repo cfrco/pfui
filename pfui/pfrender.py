@@ -1,5 +1,4 @@
 import scipy.misc
-#import pyiptk as ip
 from .pyiptk import gray2rgb,fft2spect,four_spect
 from .pyiptk import rgb as iprgb
 import numpy as np
