@@ -3,7 +3,7 @@ import numpy as np
 import scipy.ndimage as scii
 
 #open
-im = pfui.PfImage("../lena.png")
+im = pfui.PfImage("lena.png")
 im.origin()
 
 #render
