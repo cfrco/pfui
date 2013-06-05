@@ -2,11 +2,11 @@ import Image
 import numpy as np
 import scipy.misc
 
-import pyiptk as ip
+#import pyiptk as ip
+from .pyiptk import rgb as iprgb
 
-#from pfwindow import PfWindow,PfBridge,PfRender,window_templates
-from pfwindow import *
-from pfrender import PfRender,qimg
+from .pfwindow import *
+from .pfrender import PfRender,qimg
 
 def rgb_do_wrap(func):
     def _func(imarr,*args):
@@ -112,7 +112,7 @@ class PfImage(object):
         
         self.fftsupport = fft
         if fft :
-            self._fft = ip.rgb.fft2(rgb)
+            self._fft = iprgb.fft2(rgb)
             self._fftif = PfRGB_Interface(self,"_fft")
         else :
             self._fftif = None
@@ -151,9 +151,9 @@ class PfImage(object):
             return 
 
         if name == "_rgb":
-            self._fft = ip.rgb.fft2(self._rgb)
+            self._fft = iprgb.fft2(self._rgb)
         elif name == "_fft":
-            self._rgb = np.real(ip.rgb.ifft2(self._fft)).astype(np.uint8)
+            self._rgb = np.real(iprgb.ifft2(self._fft)).astype(np.uint8)
 
         self.do_hook("rebuild")
     
