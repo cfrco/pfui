@@ -1,5 +1,6 @@
 import scipy.misc
-import pyiptk as ip
+from .pyiptk import gray2rgb,fft2spect,four_spect
+from .pyiptk import rgb as iprgb
 import numpy as np
 
 def qimg(imarr):
@@ -19,19 +20,19 @@ def pfrender_ghpass(im,ins):
 
 def pfrender_fftps(im,ins):
     if ins.fft == None :
-        return ip.gray2rgb(ip.four_spect(im))
-    return qresize(im,ip.gray2rgb(ip.fft2spect(ins._fft)))
+        return gray2rgb(four_spect(im))
+    return qresize(im,gray2rgb(fft2spect(ins._fft)))
 
 def pfrender_fft(im,ins):
     if ins.fft == None :
-        return np.real(ip.rgb.fft2(im))
+        return np.real(iprgb.fft2(im))
     return qresize(im,np.real(ins._fft).astype(np.uint8))
 
 PfRender = {
     "RGB" : lambda im,ins : im,
-    "R" : lambda im,ins : ip.gray2rgb(im[:,:,0]),
-    "G" : lambda im,ins : ip.gray2rgb(im[:,:,1]),
-    "B" : lambda im,ins : ip.gray2rgb(im[:,:,2]),
+    "R" : lambda im,ins : gray2rgb(im[:,:,0]),
+    "G" : lambda im,ins : gray2rgb(im[:,:,1]),
+    "B" : lambda im,ins : gray2rgb(im[:,:,2]),
     "FFTPS" : pfrender_fftps,
     "FFT" : pfrender_fft,
     "ghpass" : pfrender_ghpass,

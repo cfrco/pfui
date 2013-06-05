@@ -2,11 +2,10 @@ import Image
 import numpy as np
 import scipy.misc
 
-import pyiptk as ip
+from .pyiptk import rgb as iprgb
 
-#from pfwindow import PfWindow,PfBridge,PfRender,window_templates
-from pfwindow import *
-from pfrender import PfRender,qimg
+from .pfwindow import *
+from .pfrender import PfRender,qimg
 
 def rgb_do_wrap(func):
     def _func(imarr,*args):
@@ -51,9 +50,26 @@ class PfRGB_Interface(object):
         
         self.ins.rebuild(self.name)
         self.ins.refresh()
+    
+    def do_stream(self,*func_args):
+        self.autore(False)
+        self.ins.push()
+        
+        for funcargs in func_args:
+            func = funcargs[0]
+            args = funcargs[1:]
+            self[:,:,0] = func(self[:,:,0],*args)
+            self[:,:,1] = func(self[:,:,1],*args)
+            self[:,:,2] = func(self[:,:,2],*args)
+
+        self.autore(True)
+        
+        self.ins.rebuild(self.name)
+        self.ins.refresh()
 
     def save(self,filename,quality=100):
-        return Image.fromarray(self.ins.__getattribute__(self.name)).save(filename,quality=quality)
+        return Image.fromarray(self.ins.__getattribute__(self.name)).\
+                     save(filename,quality=quality)
 
 class PfImage(object):
     @staticmethod
@@ -95,7 +111,7 @@ class PfImage(object):
         
         self.fftsupport = fft
         if fft :
-            self._fft = ip.rgb.fft2(rgb)
+            self._fft = iprgb.fft2(rgb)
             self._fftif = PfRGB_Interface(self,"_fft")
         else :
             self._fftif = None
@@ -104,6 +120,7 @@ class PfImage(object):
         self.thumbnails = {}
 
         # stages
+        self.stages_type = "rgb"
         self.stages = []
         self.rstages = []
         self.stages_limit = 5
@@ -129,12 +146,13 @@ class PfImage(object):
         self.thumbnails = {} # clean thumbnail
 
         if not self.fftsupport :
+            self.do_hook("rebuild")
             return 
 
         if name == "_rgb":
-            self._fft = ip.rgb.fft2(self._rgb)
+            self._fft = iprgb.fft2(self._rgb)
         elif name == "_fft":
-            self._rgb = np.real(ip.rgb.ifft2(self._fft)).astype(np.uint8)
+            self._rgb = np.real(iprgb.ifft2(self._fft)).astype(np.uint8)
 
         self.do_hook("rebuild")
     
@@ -191,18 +209,25 @@ class PfImage(object):
         if stage:
             self.stages.append(stage)
         else :
-            self.stages.append(self.rgb.duplicate())
+            if self.stages_type == "rgb":
+                self.stages.append(self.rgb.duplicate())
+            elif self.stages_type == "fft":
+                self.stages.append(self.fft.duplicate())
 
     def pop(self,stack,astack):
         if len(stack) <= 0:
             return False
-
-        astack.append(self.rgb.duplicate())
-
+        
         stage = stack.pop()
-        self._rgb[:,:,:] = stage
+        if self.stages_type == "rgb":
+            astack.append(self.rgb.duplicate())
+            self._rgb[:,:,:] = stage
+            self.rebuild("_rgb")
+        elif self.stages_type == "fft":
+            astack.append(self.fft.duplicate())
+            self._fft[:,:,:] = stage
+            self.rebuild("_fft")
 
-        self.rebuild("_rgb")
         self.refresh()
         return True
 
@@ -215,6 +240,14 @@ class PfImage(object):
     def stage_clean(self):
         self.stages = []
         self.rstages = []
+
+    def stage_type(self,stype=None):
+        if (stype == "rgb" and self.stages_type != "rgb") or \
+           (stype == "fft" and self.stages_type != "fft"):
+            self.stages_type = stype
+            self.stage_clean()
+
+        return self.stages_type
 
     #Hook
     def do_hook(self,event):
