@@ -92,7 +92,7 @@ class PfImage(object):
         elif isinstance(indata,PfImage):
             rgb = indata.rgb.duplicate()
 
-        #Tuple(row,col) , an empty image
+        #Tuple(row,col) ,an empty image
         elif isinstance(indata,tuple) and len(indata) == 2 and \
              isinstance(indata[0],int) and isinstance(indata[1],int):
             rgb = np.ndarray((indata[0],indata[1],3),dtype=np.uint8)
@@ -124,7 +124,6 @@ class PfImage(object):
         self.stages = []
         self.rstages = []
         self.stages_limit = 5
-        #self.windows = []
 
         #hooks
         self.hooks = {"rebuild":[]}
@@ -170,7 +169,6 @@ class PfImage(object):
     #Window
     def window(self,shape,window_size,imgs,name="Image"):
         window = PfWindow(window_size,shape,name)
-        #self.windows += [window]
 
         for r in range(len(imgs)):
             for c in range(len(imgs[r])):

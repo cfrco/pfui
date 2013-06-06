@@ -196,7 +196,7 @@ class PfdView:
 
     def __init__(self,bridge):
         self.bridge = bridge
-        self.iflag = False
+        self.iflag  = False
 
         self.window = gtk.Window()
         self.window.set_title("DetailView")
