@@ -1,6 +1,6 @@
 import numpy as np
 import scikits.audiolab as aulab
-import augtk
+from .pfwindow import PfAudioView
 
 class PfAudio(object):
     def __init__(self,filename,mode='r',format=None,channels=0,samplerate=0):
@@ -22,7 +22,7 @@ class PfAudio(object):
                 self.data = self.data[:,0]
 
         self.av,self.window = None,None
-        print self.snd
+        #print self.snd
         
     def play(self,start=0,frames=0):
         if frames == 0:
@@ -30,10 +30,10 @@ class PfAudio(object):
         aulab.play(self.data[start:frames],fs=self.freq)
     
     def view(self,width=1000,height=400):
-        return augtk.AudioView(self,width,height,False)
+        return PfAudioView(self,width,height,False)
 
     def view_all(self,width=1000,height=400):
-        return augtk.AudioView(self,width,height)
+        return PfAudioView(self,width,height)
 
     def edit(self,d):
         self.av = augtk.refresh(self.window,self.av,d)
