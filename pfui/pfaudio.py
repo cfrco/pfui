@@ -24,10 +24,28 @@ class PfAudio(object):
         self.av,self.window = None,None
         #print self.snd
         
-    def play(self,start=0,frames=0):
+    def _play(self,start=0,frames=0):
         if frames == 0:
             frames = self.frames
         aulab.play(self.data[start:frames],fs=self.freq)
+    
+    def play(self,start="0m0s",end="0m0s"):
+        sm = ss = m = s = 0
+        if 'm' in start:
+            sm = int(start[:start.find('m')])
+        if 'm' in end:
+            m = int(end[:end.find('m')])
+        if 's' in end:
+            s = int(end[end.find('m')+1:end.find('s')])
+        if 's' in start:
+            ss = int(start[start.find('m')+1:start.find('s')])
+        frames = (m*60+s)*self.freq
+        sf = (sm*60+ss)*self.freq
+        if frames>self.frames or frames==0:
+            frames = self.frames
+        if sf > self.frames:
+            sf = 0
+        aulab.play(self.data[sf:frames],fs=self.freq)
     
     def view(self,width=1000,height=400):
         return PfAudioView(self,width,height,False)
@@ -35,7 +53,5 @@ class PfAudio(object):
     def view_all(self,width=1000,height=400):
         return PfAudioView(self,width,height)
 
-    def edit(self,d):
-        self.av = augtk.refresh(self.window,self.av,d)
-        return augtk.AudioView(self,width,height,True)
-
+    def write(self,data):
+        self.snd.write_frames(data)
