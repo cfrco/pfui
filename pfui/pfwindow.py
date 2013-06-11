@@ -255,10 +255,6 @@ class PfWindow:
         pass
 
     def get_image(self):
-        """
-            TODO[bug]@cfrco:
-            may output wrong image
-        """
         size = self.window.get_size()
         output = np.ndarray((size[1],size[0],3),dtype=np.uint8)
         output[:,:,:] = 0
@@ -272,7 +268,11 @@ class PfWindow:
                 
                 if pb != None :
                     output[r*size[0]:r*size[0]+len(pa),
-                           c*size[1]:c*size[1]+len(pa[0]),:] = pa
+                           c*size[1]:c*size[1]+len(pa[0]),0] = pa[:,:,0]
+                    output[r*size[0]:r*size[0]+len(pa),
+                           c*size[1]:c*size[1]+len(pa[0]),1] = pa[:,:,1]
+                    output[r*size[0]:r*size[0]+len(pa),
+                           c*size[1]:c*size[1]+len(pa[0]),2] = pa[:,:,2]
 
         return output
 
