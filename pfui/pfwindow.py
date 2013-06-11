@@ -255,10 +255,6 @@ class PfWindow:
         pass
 
     def get_image(self):
-        """
-            TODO[bug]@cfrco:
-            may output wrong image
-        """
         size = self.window.get_size()
         output = np.ndarray((size[1],size[0],3),dtype=np.uint8)
         output[:,:,:] = 0
@@ -272,7 +268,11 @@ class PfWindow:
                 
                 if pb != None :
                     output[r*size[0]:r*size[0]+len(pa),
-                           c*size[1]:c*size[1]+len(pa[0]),:] = pa
+                           c*size[1]:c*size[1]+len(pa[0]),0] = pa[:,:,0]
+                    output[r*size[0]:r*size[0]+len(pa),
+                           c*size[1]:c*size[1]+len(pa[0]),1] = pa[:,:,1]
+                    output[r*size[0]:r*size[0]+len(pa),
+                           c*size[1]:c*size[1]+len(pa[0]),2] = pa[:,:,2]
 
         return output
 
@@ -393,6 +393,12 @@ class PfAudioView():
 
         if self.func_do:
             self.func_do()
+
+    def summ_expose(self,widget,event):
+        self.summ_cr = widget.window.cairo_create()
+
+        if self.summ_func_do :
+            self.summ_func_do()
     
     def __init__(self,pfaudio,width,height,view_all=True):
         self.pfaudio = pfaudio
@@ -425,6 +431,12 @@ class PfAudioView():
             self.scroller.connect("value-changed",self.change)
             self.vbox.pack_start(self.scroller,True,True,0)
             self.draw_range = (0,self.width)
+
+            # SummaryArea
+            self.summ_area = gtk.DrawingArea()
+            self.summ_area.connect("expose_event",self.summ_expose)
+            self.summ_area.set_size_request(self.width,30)
+            self.vbox.pack_start(self.summ_area,True,True,0)
         else :
             self.draw_range = (0,self.pfaudio.data.size)
         
@@ -435,10 +447,12 @@ class PfAudioView():
         self.line_color = (1.0,1.0,1.0)
 
         self.func_do = self._draw_wave
+        self.summ_func_do = self._draw_summ
         self.refresh()
 
     def refresh(self):
         self.draw_area.queue_draw()
+        self.summ_area.queue_draw()
         while gtk.events_pending():
             gtk.main_iteration_do(True)
     
@@ -450,9 +464,8 @@ class PfAudioView():
     def _draw_wave(self):
         c = int(ceil(float(self.draw_range[1]-self.draw_range[0])/self.width))
         data = self.pfaudio.data[self.draw_range[0]:self.draw_range[1]:c].copy()
-        #time = data.size/self.pfaudio.freq
 
-        data *= 1000
+        data *= self.height
         data += self.height/2
 
         self.set_bg(self.width,self.height,self.bg_color)
@@ -464,3 +477,31 @@ class PfAudioView():
                 self.cr.line_to(i,a)
                 i += 1
             self.cr.stroke()
+
+    def _draw_summ(self):
+        c = int(ceil(float(self.pfaudio.data.size)/self.width))
+        data = self.pfaudio.data[:].copy()
+
+        data *= 30
+        data += 30/2
+        
+        #background
+        self.summ_cr.set_source_rgb(*self.bg_color)
+        self.summ_cr.rectangle(0, 0, self.width, 30)
+        self.summ_cr.fill()
+
+        self.summ_cr.set_source_rgb(*self.line_color)
+        self.summ_cr.set_line_width(1)
+        if data!=None and len(data)!=0:
+            self.summ_cr.move_to(0,data[0])
+            i = 1
+            for a in data[1::c]:
+                self.summ_cr.line_to(i,a)
+                i += 1
+            self.summ_cr.stroke()
+        
+        self.summ_cr.set_source_rgb(1,0,0)
+        self.summ_cr.move_to(self.draw_range[0]/c,0)
+        self.summ_cr.line_to(self.draw_range[0]/c,30)
+        
+        self.summ_cr.stroke()
