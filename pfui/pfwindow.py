@@ -437,8 +437,11 @@ class PfAudioView():
             self.summ_area.connect("expose_event",self.summ_expose)
             self.summ_area.set_size_request(self.width,30)
             self.vbox.pack_start(self.summ_area,True,True,0)
+            self.summ_func_do = self._draw_summ
         else :
             self.draw_range = (0,self.pfaudio.data.size)
+            self.summ_func_do = None
+            self.summ_area = None
         
         self.window.show_all()
        
@@ -447,12 +450,12 @@ class PfAudioView():
         self.line_color = (1.0,1.0,1.0)
 
         self.func_do = self._draw_wave
-        self.summ_func_do = self._draw_summ
         self.refresh()
 
     def refresh(self):
         self.draw_area.queue_draw()
-        self.summ_area.queue_draw()
+        if self.summ_area:
+            self.summ_area.queue_draw()
         while gtk.events_pending():
             gtk.main_iteration_do(True)
     
